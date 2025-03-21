@@ -10,6 +10,7 @@ The 8085 exercises were executed with this 8085 simulator:
 TSIK
 
 Simulator Interface
+
 ![image](https://github.com/user-attachments/assets/3f6ed6f0-bbd2-4b32-bf29-6871806280e5)
 
 
