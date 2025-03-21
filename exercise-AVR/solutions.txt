@@ -1,0 +1,133 @@
+1.1
+
+.include "m328pdef.inc"
+main:
+ldi r16, 0x00   ; input
+out DDRB, r16
+ldi r16, 0xFF   ; output
+out DDRC, r16
+
+loop:
+    in r16, PINB
+
+    ; Extract individual bits for A, B, C, and D
+    mov r17, r16       ; Move input value to r17
+    andi r17, 0x01     ; Mask to extract bit 0 (A)
+
+    mov r18, r16       ; Move input value to r18
+    lsr r18            ; Shift right to get B to the least significant bit
+    andi r18, 0x01     ; Mask to extract bit 0 (B)
+
+    mov r19, r16       ; Move input value to r19
+    lsr r19            ; Shift right twice to get C to the least significant bit
+    andi r19, 0x01     ; Mask to extract bit 0 (C)
+
+    mov r20, r16       ; Move input value to r20
+    lsr r20            ; Shift right three times to get D to the least significant bit
+    andi r20, 0x01     ; Mask to extract bit 0 (D)
+
+    ; Calculates F1 = (A' + C') ∙ (B + D')
+    com r17            ;r17=A'
+    or r21, r17        ;r21=A'
+    com r19            ;r19=C'
+    or r21, r19        ;r21=(A'+C')
+    or r22, r18        ;r22=B
+    com r20            ;r20=D'
+    or r22, r20        ;r22=(B+D')
+    and r21, r22       ;r21=(A'+C')*(B+D')
+
+    ; Calculate F0 = (A ∙ B + B' ∙ D)
+    com r17            ;r17=A
+    and r17, r18       ;r17=(A*B)
+    com r18            ;r18=B'
+    com r20            ;r20=D
+    and r18, r20       ;r18=(B'*D)
+    or r17, r18        ;r17=(A*B)+(B'*D)
+
+    in r24, PORTC    ; Read PORTC
+    andi r24, 0xFC   ; Clear the bits for F1 and F0  
+    lsl r21          ; Shift F1 to the appropriate position
+    or r24, r21      ; Update PORTC with F1
+    or r24, r17      ; Update PORTC with F0
+    out PORTC, r24   ; Write updated value to PORTC
+    
+rjmp loop            ; Jump back to the loop
+
+
+1.2
+
+.include "m328PBdef.inc"
+.equ FOSC_MHZ=16   ;MHZ
+.equ DEL_MS=1000
+.equ F1=FOSC_MHZ*DEL_MS
+
+;Init stack pointer
+   ldi r24, LOW(RAMEND)
+   out SPL, r24
+   ldi r24, HIGH(RAMEND)
+   out SPH, r24
+   
+  ;Init PORTD as output
+    ser r26
+    out DDRD, r26
+    
+    ldi r24, low(F1)
+    ldi r25, high(F1)  ;set delay
+    
+main:	
+    ldi r16, 0X01
+    ldi r17, 0X07
+	
+loop_right_to_left:
+    
+    out PORTD, r16
+    rcall delay_outer
+    lsl r16
+    
+    dec r17
+    BRNE loop_right_to_left
+    
+    ldi r17,0x07
+    out PORTD, r16
+    rcall delay_outer
+    
+loop_left_to_right:
+    
+    out PORTD, r16
+    rcall delay_outer
+    lsr r16
+    
+    dec r17
+    BRNE loop_left_to_right
+    
+    ldi r17,0x07
+    out PORTD, r16
+    rcall delay_outer
+    JMP loop_right_to_left
+    
+    
+delay_inner:
+    ldi r23, 247
+loop3:
+    dec r23
+    nop
+    brne loop3
+    nop
+    ret
+    
+delay_outer:
+    push r24
+    push r25
+loop4:
+    rcall delay_inner
+    sbiw r24,1
+    brne loop4
+    
+    pop r25
+    pop r24
+    ret
+	
+	
+	
+	
+	

@@ -1,0 +1,12 @@
+START:
+		IN 10H
+		MVI A,00H    ;O A krataei thn timh pou theloume na apothikeusoume
+		LXI H,0900H  ;HL dieuthunsh
+		MOV M,A
+STORE:
+		INR A        ;aukshsh A kai HL kata 1
+		INX H        ;
+		MOV M,A      ;apothikeuoume ton A sth mnhmh
+		CPI 7FH      ;if A<127 epanalabe
+		JNZ STORE	
+END
